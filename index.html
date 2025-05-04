@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Budget Tracker Fun!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FFFCEB; /* Requested background */
+        }
+
+        /* Main container styling */
+        .main-container {
+            background-color: #ffffff;
+            border: 3px solid #2D3748;
+            border-radius: 16px;
+            box-shadow: 8px 8px 0px #2D3748;
+            width: 100%;
+            max-width: 64rem; /* max-w-5xl */
+            margin: 2rem auto;
+        }
+
+         /* Section Container Styling */
+        .section-container {
+             background-color: #FFF7ED; /* orange-50 */
+             border: 2px solid #FDBA74; /* orange-300 */
+             border-radius: 12px;
+             box-shadow: 4px 4px 0px #FDBA74; /* Offset shadow using border color */
+             padding: 1.5rem; /* p-6 */
+        }
+         .section-container-alt { /* For Table/Chart */
+             background-color: #FEF3C7; /* amber-100 */
+             border: 2px solid #FDE68A; /* amber-200 */
+             border-radius: 12px;
+             box-shadow: 4px 4px 0px #FDE68A;
+             padding: 1.5rem; /* p-6 */
+         }
+
+        /* Playful Input/Select Styling */
+        input[type="text"], input[type="number"], input[type="date"], select {
+            width: 100%;
+            padding: 0.65rem 1rem; /* Adjusted padding */
+            background-color: #ffffff;
+            border: 3px solid #4A5568;
+            border-radius: 10px;
+            color: #2D3748;
+            font-weight: 500;
+            transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, border-color 0.15s ease-out;
+            box-shadow: 3px 3px 0px #4A5568;
+            font-size: 0.9rem;
+        }
+        input::placeholder { color: #A0AEC0; font-weight: 400; }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #FF7F50; /* Coral */
+            box-shadow: 3px 3px 0px #FF7F50, 0 0 0 3px #FFFCEB;
+            transform: translateY(-1px) translateX(-1px);
+        }
+        select {
+            -webkit-appearance: none; -moz-appearance: none; appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%234A5568' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.75rem center; background-repeat: no-repeat; background-size: 1.25em 1.25em; padding-right: 2.75rem;
+        }
+
+        /* Playful Action Button Style */
+        .action-button {
+            background-color: #FF7F50; /* Coral */
+            color: white;
+            font-weight: 700; /* bold */
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem; /* rounded-xl */
+            border: 3px solid #2D3748; /* Darker border */
+            box-shadow: 5px 5px 0px #2D3748; /* Bigger shadow */
+            transition: all 0.15s ease-out;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+            text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.9rem;
+        }
+        .action-button:hover {
+            background-color: #FF6347; /* Tomato */
+            box-shadow: 6px 6px 0px #2D3748;
+            transform: translateY(-2px) translateX(-1px); /* More lift */
+        }
+         .action-button:active {
+            background-color: #CD5C5C; /* IndianRed */
+            box-shadow: 2px 2px 0px #2D3748;
+            transform: translateY(2px) translateX(2px); /* Push down effect */
+        }
+        .action-button:focus {
+            outline: none;
+            box-shadow: 5px 5px 0px #2D3748, 0 0 0 3px #FFFCEB, 0 0 0 5px #FF7F50; /* Ring effect */
+        }
+
+        /* Delete Button Styling */
+        .delete-button {
+             background-color: #FEF2F2; /* red-50 */
+             color: #DC2626; /* red-600 */
+             border: 2px solid #F87171; /* red-400 */
+             border-radius: 50%; /* Circle */
+             width: 28px; height: 28px;
+             font-weight: bold;
+             font-size: 1rem;
+             line-height: 1;
+             padding: 0;
+             margin-left: 0.5rem;
+             transition: all 0.15s ease-out;
+             box-shadow: 2px 2px 0px #FCA5A5; /* red-300 */
+             display: inline-flex; align-items: center; justify-content: center;
+             cursor: pointer; /* Ensure cursor indicates clickable */
+        }
+        .delete-button:hover {
+             background-color: #FEE2E2; /* red-100 */
+             color: #B91C1C; /* red-700 */
+             transform: translateY(-1px) scale(1.05);
+             box-shadow: 3px 3px 0px #F87171;
+        }
+         .delete-button:active {
+             transform: translateY(1px) scale(0.95);
+             box-shadow: 1px 1px 0px #FCA5A5;
+         }
+
+        /* Table Styling */
+        table { width: 100%; border-collapse: separate; border-spacing: 0 0.5rem; /* Add space between rows */ }
+        th, td { padding: 0.75rem 1rem; text-align: left; }
+        thead th {
+            background-color: #FDBA74; /* orange-300 */
+            color: #9A3412; /* amber-800 */
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 3px solid #EA580C; /* orange-600 */
+        }
+         thead th:first-child { border-top-left-radius: 8px; }
+         thead th:last-child { border-top-right-radius: 8px; }
+        tbody tr { background-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        tbody tr:hover { background-color: #FFFBEB; /* amber-50 */ }
+        tbody td { font-size: 0.9rem; color: #374151; /* gray-700 */ border-bottom: 1px solid #FDE68A; /* amber-200 */}
+        tbody td:first-child { border-left: 1px solid #FDE68A; border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
+        tbody td:last-child { border-right: 1px solid #FDE68A; border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
+        .amount-income { color: #16A34A; /* green-600 */ font-weight: 600; }
+        .amount-expense { color: #DC2626; /* red-600 */ font-weight: 600; }
+
+        /* Chart Area Styling */
+        #chartContainer { min-height: 300px; display: flex; justify-content: center; align-items: center; }
+        #expenseChart { max-width: 100%; height: auto; }
+        #chartTooltip {
+            position: absolute; background-color: rgba(45, 55, 72, 0.9); color: #FFFCEB;
+            padding: 6px 10px; border-radius: 6px; font-size: 11px; pointer-events: none;
+            opacity: 0; transition: opacity 0.2s ease-out; border: 1px solid #FFFCEB;
+            box-shadow: 2px 2px 0px rgba(45, 55, 72, 0.5); white-space: nowrap; z-index: 10;
+        }
+
+        /* Headings & Labels */
+        .section-heading { color: #C2410C; font-weight: 700; text-align: center; border-bottom: 2px dashed #FDBA74; padding-bottom: 0.5rem; margin-bottom: 1rem; font-size: 1.125rem; }
+        label { color: #9A3412; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.5rem; display: block; }
+        .balance-display {
+             text-align: center; font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem;
+             padding: 0.5rem; border-radius: 8px;
+        }
+        .balance-positive { color: #15803D; background-color: #DCFCE7; border: 1px solid #86EFAC;} /* green */
+        .balance-negative { color: #B91C1C; background-color: #FEF2F2; border: 1px solid #FCA5A5;} /* red */
+        .balance-zero { color: #4B5563; background-color: #F3F4F6; border: 1px solid #D1D5DB;} /* gray */
+
+    </style>
+</head>
+<body class="p-4 md:p-6">
+
+    <div class="main-container p-6 sm:p-8">
+        <h1 class="text-3xl sm:text-4xl font-bold text-center text-slate-800 mb-8 tracking-tight flex items-center justify-center gap-3">
+             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-9 h-9 text-orange-500">
+               <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V8.25c0-.621.504-1.125 1.125-1.125h1.5c.621 0 1.125.504 1.125 1.125v.375m0 0h15m-15 0v9.75c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V6.75m-15 0h15" />
+             </svg>
+            Simple Budget Tracker Fun!
+        </h1>
+
+        <div class="section-container mb-8">
+            <h2 class="section-heading mb-6">Add New Transaction</h2>
+            <form id="transactionForm" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div>
+                    <label for="description">Description:</label>
+                    <input type="text" id="description" placeholder="e.g., Groceries, Salary" required>
+                </div>
+                <div>
+                    <label for="amount">Amount:</label>
+                    <input type="number" id="amount" placeholder="e.g., 50.00" step="0.01" required>
+                </div>
+                <div>
+                    <label for="type">Type:</label>
+                    <select id="type">
+                        <option value="expense" selected>Expense</option>
+                        <option value="income">Income</option>
+                    </select>
+                </div>
+                 <div id="categoryDiv"> <label for="category">Category (Expense):</label>
+                    <select id="category">
+                        <option value="Food">Food</option>
+                        <option value="Transport">Transport</option>
+                        <option value="Utilities">Utilities</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Housing">Housing</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="date">Date:</label>
+                    <input type="date" id="date" required>
+                </div>
+                <div class="md:col-span-1 flex justify-center md:justify-end pt-4">
+                     <button type="submit" class="action-button w-full md:w-auto">
+                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                         Add
+                     </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="section-container-alt mb-8">
+            <h2 class="section-heading">Summary & History</h2>
+            <div id="balanceDisplay" class="balance-display balance-zero">Balance: $0.00</div>
+            <div class="overflow-x-auto">
+                <table id="transactionTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Category/Type</th>
+                            <th>Amount</th>
+                            <th></th> </tr>
+                    </thead>
+                    <tbody id="transactionList">
+                        <tr><td colspan="5" class="text-center text-gray-500 italic py-4">No transactions yet.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section-container-alt">
+             <h2 class="section-heading">Expense Breakdown</h2>
+             <div id="chartContainer">
+                 <svg id="expenseChart"></svg>
+             </div>
+             <div id="chartTooltip"></div> </div>
+
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const transactionForm = document.getElementById('transactionForm');
+        const descriptionInput = document.getElementById('description');
+        const amountInput = document.getElementById('amount');
+        const typeSelect = document.getElementById('type');
+        const categoryDiv = document.getElementById('categoryDiv');
+        const categorySelect = document.getElementById('category');
+        const dateInput = document.getElementById('date');
+        const transactionList = document.getElementById('transactionList');
+        const balanceDisplay = document.getElementById('balanceDisplay');
+        const chartContainer = document.getElementById('chartContainer');
+        const expenseChartSvg = d3.select("#expenseChart");
+        const chartTooltip = d3.select("#chartTooltip");
+
+        // --- State ---
+        let transactions = []; // Array to hold transaction objects
+        const STORAGE_KEY = 'simpleBudgetTransactions_v1'; // Key for localStorage
+
+        // --- Helper Functions ---
+
+        // Formats a number into a currency string (e.g., $50.00)
+        function formatCurrency(amount) {
+            return `$${amount.toFixed(2)}`;
+        }
+
+        // Saves the current transactions array to localStorage
+        function saveTransactions() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+        }
+
+        // Loads transactions from localStorage into the state array
+        function loadTransactions() {
+            const storedTransactions = localStorage.getItem(STORAGE_KEY);
+            transactions = storedTransactions ? JSON.parse(storedTransactions) : [];
+            // Convert stored date strings back into Date objects
+            transactions.forEach(t => t.date = new Date(t.date));
+            // Sort transactions by date (newest first) upon loading
+            transactions.sort((a, b) => b.date - a.date);
+        }
+
+        // Calculates the total balance and updates the display
+        function updateBalance() {
+            const balance = transactions.reduce((acc, transaction) => {
+                // Add income, subtract expense
+                return transaction.type === 'income' ? acc + transaction.amount : acc - transaction.amount;
+            }, 0); // Start accumulator at 0
+            balanceDisplay.textContent = `Balance: ${formatCurrency(balance)}`;
+            // Apply styling based on balance value
+            balanceDisplay.classList.remove('balance-positive', 'balance-negative', 'balance-zero');
+            if (balance > 0) balanceDisplay.classList.add('balance-positive');
+            else if (balance < 0) balanceDisplay.classList.add('balance-negative');
+            else balanceDisplay.classList.add('balance-zero');
+        }
+
+        // Populates the transaction history table
+        function renderTransactions() {
+            transactionList.innerHTML = ''; // Clear previous table rows
+
+            if (transactions.length === 0) {
+                // Display a message if there are no transactions
+                transactionList.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500 italic py-4">No transactions yet. Add one above!</td></tr>';
+                return;
+            }
+
+            // Create a table row for each transaction
+            transactions.forEach((transaction) => { // Removed index from here
+                const row = document.createElement('tr');
+                const amountClass = transaction.type === 'income' ? 'amount-income' : 'amount-expense';
+                const categoryOrType = transaction.type === 'income' ? 'Income' : transaction.category;
+
+                // Set inner HTML for the row, including the delete button with data-id
+                row.innerHTML = `
+                    <td>${transaction.date.toLocaleDateString()}</td>
+                    <td>${transaction.description}</td>
+                    <td>${categoryOrType}</td>
+                    <td class="${amountClass}">${formatCurrency(transaction.amount)}</td>
+                    <td>
+                        <button class="delete-button" data-id="${transaction.id}" title="Delete Transaction">&times;</button>
+                    </td>
+                `;
+                transactionList.appendChild(row);
+            });
+        }
+
+        // Deletes a transaction by its unique ID
+        function deleteTransaction(idToDelete) {
+            // Find the index of the transaction with the matching ID
+            const indexToDelete = transactions.findIndex(t => t.id === idToDelete);
+
+            if (indexToDelete !== -1) { // Check if the transaction was found
+                transactions.splice(indexToDelete, 1); // Remove the transaction from the array
+                saveTransactions(); // Save the updated array to localStorage
+                updateUI(); // Refresh the UI (table, balance, chart)
+            } else {
+                console.error("Transaction ID not found for deletion:", idToDelete);
+            }
+        }
+
+         // Renders the expense breakdown pie chart using D3
+         function renderExpenseChart() {
+             expenseChartSvg.selectAll("*").remove(); // Clear previous chart elements
+
+             // Filter out only expense transactions
+             const expenseData = transactions.filter(t => t.type === 'expense');
+
+             // If no expense data, display a message
+             if (expenseData.length === 0) {
+                 expenseChartSvg.append("text")
+                     .attr("x", "50%") // Center horizontally
+                     .attr("y", "50%") // Center vertically
+                     .attr("text-anchor", "middle")
+                     .attr("dominant-baseline", "middle")
+                     .attr("fill", "#9A3412") // Use theme color
+                     .style("font-size", "14px")
+                     .style("font-style", "italic")
+                     .text("No expense data to display chart.");
+                 return;
+             }
+
+             // Group expenses by category and sum amounts using d3.rollup
+             const expensesByCategory = d3.rollup(
+                 expenseData,
+                 v => d3.sum(v, d => d.amount), // Sum amounts for each group
+                 d => d.category // Group by the 'category' property
+             );
+
+             // Convert the Map returned by d3.rollup into an array of objects for D3 pie layout
+             const chartData = Array.from(expensesByCategory, ([key, value]) => ({ category: key, amount: value }));
+
+             // --- Chart Dimensions and Setup ---
+             const containerWidth = chartContainer.clientWidth || 300; // Get container width or default
+             const containerHeight = 300; // Fixed height
+             const radius = Math.min(containerWidth, containerHeight) / 2 - 20; // Calculate radius with margin
+
+             // Create SVG group centered in the container
+             const svg = expenseChartSvg
+                 .attr("width", containerWidth)
+                 .attr("height", containerHeight)
+                 .append("g")
+                 .attr("transform", `translate(${containerWidth / 2}, ${containerHeight / 2})`);
+
+             // Define a color scale for categories
+             const color = d3.scaleOrdinal(d3.schemeTableau10); // Using a D3 color scheme
+
+             // Define the pie layout generator
+             const pie = d3.pie()
+                 .value(d => d.amount) // Value accessor: use the 'amount' property
+                 .sort(null); // Keep the original order from the data
+
+             // Define the arc generator for drawing slices
+             const arc = d3.arc()
+                 .innerRadius(radius * 0.5) // Inner radius for donut chart effect
+                 .outerRadius(radius);     // Outer radius
+
+             // --- Draw Arcs (Slices) ---
+             const arcs = svg.selectAll("path")
+                 .data(pie(chartData)) // Bind data processed by the pie generator
+                 .enter()
+                 .append("path")
+                 .attr("d", arc) // Use the arc generator to set the 'd' attribute
+                 .attr("fill", d => color(d.data.category)) // Assign color based on category
+                 .attr("stroke", "#FFFCEB") // Add a border matching the background
+                 .style("stroke-width", "2px")
+                 .style("cursor", "pointer")
+                 // --- Tooltip Interaction ---
+                 .on("mouseover", (event, d) => {
+                     chartTooltip.style("opacity", 1); // Show tooltip
+                     d3.select(event.currentTarget) // Select the hovered path
+                         .transition().duration(150)
+                         .attr("transform", `scale(1.03)`); // Slightly enlarge the slice
+                 })
+                 .on("mousemove", (event, d) => {
+                     // Calculate percentage for the tooltip
+                     const totalExpenses = d3.sum(chartData, item => item.amount);
+                     const percentage = ((d.data.amount / totalExpenses) * 100).toFixed(1);
+                     // Update tooltip content and position
+                     chartTooltip
+                         .html(`<strong>${d.data.category}</strong><br>${formatCurrency(d.data.amount)} (${percentage}%)`)
+                         .style("left", (event.pageX + 10) + "px")
+                         .style("top", (event.pageY - 15) + "px");
+                 })
+                 .on("mouseout", (event, d) => {
+                     chartTooltip.style("opacity", 0); // Hide tooltip
+                     d3.select(event.currentTarget) // Select the path again
+                         .transition().duration(150)
+                         .attr("transform", "scale(1)"); // Return slice to normal size
+                 });
+         }
+
+
+        // Updates the entire UI by calling individual render/update functions
+        function updateUI() {
+            renderTransactions();
+            updateBalance();
+            renderExpenseChart();
+        }
+
+        // --- Event Listeners ---
+
+        // Handle form submission to add a new transaction
+        transactionForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // Prevent default page reload
+
+            // Get values from form inputs
+            const description = descriptionInput.value.trim();
+            const amount = parseFloat(amountInput.value);
+            const type = typeSelect.value;
+            const category = categorySelect.value;
+            const date = dateInput.value;
+
+            // Basic validation
+            if (!description || isNaN(amount) || amount <= 0 || !date) {
+                alert('Please fill in all fields with valid values.');
+                return;
+            }
+
+            // Create a new transaction object
+            const newTransaction = {
+                id: Date.now(), // Use timestamp as a simple unique ID
+                description: description,
+                amount: amount,
+                type: type,
+                category: type === 'expense' ? category : null, // Category only for expenses
+                date: new Date(date + 'T00:00:00') // Store date consistently, avoiding timezone issues on reload
+            };
+
+            // Add transaction, sort, save, and update UI
+            transactions.push(newTransaction);
+            transactions.sort((a, b) => b.date - a.date); // Re-sort by date (newest first)
+            saveTransactions();
+            updateUI();
+
+            // Reset the form for the next entry
+            transactionForm.reset();
+            dateInput.valueAsDate = new Date(); // Set date back to today
+            categoryDiv.style.display = 'block'; // Ensure category dropdown is visible
+        });
+
+        // Show/hide the category dropdown based on the selected transaction type
+        typeSelect.addEventListener('change', (e) => {
+            categoryDiv.style.display = e.target.value === 'expense' ? 'block' : 'none';
+        });
+
+        // Use event delegation on the table body to handle clicks on delete buttons
+        transactionList.addEventListener('click', (e) => {
+            // Check if the clicked element is a delete button
+            if (e.target.classList.contains('delete-button')) {
+                // Get the unique ID of the transaction from the button's data-id attribute
+                const idToDelete = parseInt(e.target.dataset.id, 10); // Ensure it's a number
+                if (!isNaN(idToDelete)) {
+                     // Find the transaction to get its description for the confirmation message
+                     const transactionToDelete = transactions.find(t => t.id === idToDelete);
+                     if (transactionToDelete && confirm(`Delete "${transactionToDelete.description}"?`)) {
+                         deleteTransaction(idToDelete); // Call delete function with the ID
+                     }
+                }
+            }
+        });
+
+         // Redraw the chart when the window is resized (with debouncing)
+         let resizeTimer;
+         window.addEventListener('resize', () => {
+             clearTimeout(resizeTimer); // Clear previous timer
+             // Set a new timer to redraw after a short delay
+             resizeTimer = setTimeout(() => {
+                 renderExpenseChart();
+             }, 250); // Debounce delay in milliseconds
+         });
+
+        // --- Initial Load ---
+        loadTransactions(); // Load data from localStorage when the page loads
+        dateInput.valueAsDate = new Date(); // Set default date input to today
+        updateUI(); // Render the initial state of the UI
+
+    </script>
+
+</body>
+</html>
